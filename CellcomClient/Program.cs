@@ -1,41 +1,38 @@
-﻿using CellcomClient;
-using System;
+﻿using System;
 using System.IO.Ports;
 using System.Threading.Tasks;
 
-public class Program
+namespace CellcomClient
 {
-    private static SerialPort _serialPort;
-
-    public static async Task Main()
+    public class Program
     {
-        _serialPort = new SerialPort("COM2", 9600);
-        _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-        _serialPort.Open();
+        private static SerialPort serialPort;
 
-        // דוגמאות לשליחת הודעות
-        await SendCommand("JOIN");
-        //await Task.Delay(2000); // המתנה של שנייה
-        //await SendCommand("NEW");
-        //await Task.Delay(5000); // המתנה של שנייה
-        //await SendCommand("<ID>STOP");
-
-        Console.ReadLine(); // השארת התוכנית פעילה להמתנה לתשובות
-    }
-
-    private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
-    {
-        SerialPort sp = (SerialPort)sender;
-        string inData = sp.ReadExisting();
-        Console.WriteLine($"Received: {inData}");
-    }
-
-    private static async Task SendCommand(string command)
-    {
-        if (_serialPort.IsOpen)
+        private const string portName = "COM2";
+        private const int clientNum = 3;
+        public static async Task Main()
         {
-            _serialPort.Write(command);
-            Console.WriteLine($"Sent: {command}");
+            serialPort = new SerialPort(portName, 9600); // Initialize serial port with specified name and baud rate
+            serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler); // Attach event handler for data received
+            serialPort.Open();  // Open the serial port for communication
+
+            Client[] clients = new Client[clientNum];
+            for (int i = 0; i < clients.Length; i++)
+            {
+                clients[i] = new Client(serialPort, "Client " + i);
+                await clients[i].SendCommands();
+            }
+            Console.ReadLine();
         }
+
+        // Event handler for when data is received from the server serial port
+        private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+        {
+            SerialPort sp = (SerialPort)sender;
+            string inData = sp.ReadExisting();
+            Console.WriteLine($"Received: {inData}");
+        }
+
+        
     }
 }

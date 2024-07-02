@@ -9,44 +9,30 @@ namespace CellcomClient
 {
     public class Client
     {
-        private SerialPort _serialPort;
-        private string _clientId;
-
-        public Client(string portName, string clientId)
-        {
-            _serialPort = new SerialPort(portName, 9600);
-            _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-            _clientId = clientId;
+        private SerialPort serialPort;
+        private string clientID;
+        public Client(SerialPort serialPort, string clientID) 
+        { 
+            this.serialPort = serialPort;
+            this.clientID = clientID;
         }
 
-        public void Start()
+        public async Task SendCommands()
         {
-            _serialPort.Open();
-            Task.Run(() => SendCommands());
+            await SendCommand("JOIN"); // Send the user command
+            await Task.Delay(1000); // Delay for 1 second
+            await SendCommand("NEW"); // Send the user command
+            await Task.Delay(5000); // Delay for 5 second
+            await SendCommand("STOP"); // Send the user command
         }
 
-        private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
-        {
-            SerialPort sp = (SerialPort)sender;
-            string inData = sp.ReadExisting();
-            Console.WriteLine($"{_clientId} Received: {inData}");
-        }
-
-        private async Task SendCommands()
-        {
-            await SendCommand($"{_clientId}JOIN");
-            await Task.Delay(1000); // המתנה של שנייה
-            await SendCommand($"{_clientId}NEW");
-            //await Task.Delay(1000); // המתנה של שנייה
-            //await SendCommand($"{_clientId}STOP");
-        }
-
+        // Method for sending a command to the server serial port
         private async Task SendCommand(string command)
         {
-            if (_serialPort.IsOpen)
+            if (serialPort.IsOpen)
             {
-                _serialPort.Write(command);
-                Console.WriteLine($"{_clientId} Sent: {command}");
+                serialPort.Write(command + "," + clientID);
+                Console.WriteLine($"{clientID} Sent: {command}");
             }
         }
     }

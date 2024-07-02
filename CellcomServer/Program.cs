@@ -1,52 +1,60 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.IO.Ports;
-using CellcomServer;
 
-public class Program
+namespace CellcomServer
 {
-    private static SerialPort _serialPort;
-    private static bool sendCellcom = false; // Flag to control the message processing loop
-
-    public static async Task Main()
+    public class Program
     {
-        _serialPort = new SerialPort("COM1", 9600);
-         _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-        _serialPort.Open();
-
-        Console.ReadLine();
-    }
-
-    private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
-    {
-        SerialPort sp = (SerialPort)sender;
-        string inData = sp.ReadExisting();
-        Task.Run(() => ProcessMessage(inData));
-    }
-
-    private static async Task ProcessMessage(string message)
-    {
-        if (message.Equals("JOIN"))
+        private static SerialPort serialPort;
+        private static bool sendCellcom = false; // Flag to control the message processing loop
+        private const string portName = "COM1";
+        public static async Task Main()
         {
-            for (int i = 1; i <= 10; i++)
-            {
-                Console.Write($"{i}");
-            }
-            _serialPort.Write("DONE");
+            serialPort = new SerialPort(portName, 9600);// Initialize serial port with specified name and baud rate
+            serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);// Attach event handler for data received
+            serialPort.Open(); // Open the serial port for communication
+            Console.ReadLine();// Wait for user input to keep the program running
         }
-        else if (message.Equals("NEW"))
+
+        // Event handler for when data is received from the serial port
+        private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
         {
-            sendCellcom = true;
-            while (sendCellcom)
-            {
-                _serialPort.Write("CELLCOM");
-                await Task.Delay(1000);
-            }
+            SerialPort sp = (SerialPort)sender;
+            string inData = sp.ReadExisting();// Read incoming data from client serial port
+            Task.Run(() => ProcessMessage(inData));// Process the received message asynchronously
         }
-        else if (message.Equals("STOP"))
+
+        // Method for processing incoming messages
+        private static async Task ProcessMessage(string message)
         {
-            sendCellcom = false;
-            _serialPort.Write("BYE");
+            string[] messages = message.Split(',');
+            string msg = messages[0];
+            string clientID= messages[1];
+            if (msg.Contains("JOIN"))
+            {
+                for (int i = 1; i <= 10; i++)
+                {
+                    Console.Write($"{i}");// Print numbers 1 to 10
+                }
+                Console.WriteLine();
+                serialPort.Write($"{clientID} {portName} DONE");// Send response indicating completion
+            }
+            else if (msg.Contains("NEW"))
+            {
+                sendCellcom = true;// Set flag to true to start sending messages
+                while (sendCellcom)
+                {
+                    serialPort.Write($"{clientID} {portName} CELLCOM");
+                    await Task.Delay(1000);
+                }
+            }
+            else if (msg.Contains("STOP"))
+            {
+                sendCellcom = false; // Set flag to false to stop sending messages
+                serialPort.Write($"{clientID} {portName} BYE"); // Send response
+            }
         }
     }
 }
+
