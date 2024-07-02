@@ -13,7 +13,7 @@ public class Program
             Console.WriteLine("Please provide a COM port as a command-line argument.");
             return;
         }
-
+         
         string portName = args[0];// Get the COM port name from command-line arguments
         Client client = new Client(portName);// Create a new Client object with the specified COM port
         await client.sendReq();// Call the asynchronous method to start sending requests
