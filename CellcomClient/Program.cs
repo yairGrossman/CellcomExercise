@@ -5,17 +5,37 @@ using System.Threading.Tasks;
 
 public class Program
 {
-    public static async Task Main(string[] args)
-    {
-        //if no COM port argument is provided
-        if (args.Length == 0)
-        {
-            Console.WriteLine("Please provide a COM port as a command-line argument.");
-            return;
-        }
+    private static SerialPort _serialPort;
 
-        string portName = args[0];// Get the COM port name from command-line arguments
-        Client client = new Client(portName);// Create a new Client object with the specified COM port
-        await client.sendReq();// Call the asynchronous method to start sending requests
+    public static async Task Main()
+    {
+        _serialPort = new SerialPort("COM2", 9600);
+        _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+        _serialPort.Open();
+
+        // דוגמאות לשליחת הודעות
+        await SendCommand("JOIN");
+        //await Task.Delay(2000); // המתנה של שנייה
+        //await SendCommand("NEW");
+        //await Task.Delay(5000); // המתנה של שנייה
+        //await SendCommand("<ID>STOP");
+
+        Console.ReadLine(); // השארת התוכנית פעילה להמתנה לתשובות
+    }
+
+    private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+    {
+        SerialPort sp = (SerialPort)sender;
+        string inData = sp.ReadExisting();
+        Console.WriteLine($"Received: {inData}");
+    }
+
+    private static async Task SendCommand(string command)
+    {
+        if (_serialPort.IsOpen)
+        {
+            _serialPort.Write(command);
+            Console.WriteLine($"Sent: {command}");
+        }
     }
 }

@@ -9,53 +9,44 @@ namespace CellcomClient
 {
     public class Client
     {
-        private SerialPort serialPort;// Serial port object for communication
-        private string portName;//Port name
+        private SerialPort _serialPort;
+        private string _clientId;
 
-        // Constructor for initializing the Client class
-        public Client(string portName)
+        public Client(string portName, string clientId)
         {
-            this.portName = portName;
-            this.serialPort = new SerialPort(portName, 9600); // Initialize serial port with specified name and baud rate
-            this.serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler); // Attach event handler for data received
-            this.serialPort.Open();  // Open the serial port for communication
+            _serialPort = new SerialPort(portName, 9600);
+            _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+            _clientId = clientId;
         }
 
-        // Method for sending requests asynchronously
-        public async Task sendReq()
+        public void Start()
         {
-            Console.WriteLine("Enter a commad:");
-            Console.WriteLine("Enter 'JOIN' for joining cellcom services");
-            Console.WriteLine("Enter 'NEW' for opening call to the server");
-            Console.WriteLine("Enter 'STOP' for closing call");
-            Console.WriteLine("Enter 'end' for client");
-            Console.WriteLine();
-            string input = Console.ReadLine();
-            while (!input.Equals("end"))
-            {
-                await SendCommand(input); // Send the user command
-                await Task.Delay(1000); // Delay for 1 second
-                input = Console.ReadLine();
-            }
-
-            Console.ReadLine(); // השארת התוכנית פעילה להמתנה לתשובות
+            _serialPort.Open();
+            Task.Run(() => SendCommands());
         }
 
-        // Event handler for when data is received from the server serial port
         private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
         {
             SerialPort sp = (SerialPort)sender;
             string inData = sp.ReadExisting();
-            Console.WriteLine($"Received: {inData}");
+            Console.WriteLine($"{_clientId} Received: {inData}");
         }
 
-        // Method for sending a command to the server serial port
+        private async Task SendCommands()
+        {
+            await SendCommand($"{_clientId}JOIN");
+            await Task.Delay(1000); // המתנה של שנייה
+            await SendCommand($"{_clientId}NEW");
+            //await Task.Delay(1000); // המתנה של שנייה
+            //await SendCommand($"{_clientId}STOP");
+        }
+
         private async Task SendCommand(string command)
         {
-            if (this.serialPort.IsOpen)
+            if (_serialPort.IsOpen)
             {
-                this.serialPort.Write(command);
-                Console.WriteLine($"{this.portName} Sent: {command}");
+                _serialPort.Write(command);
+                Console.WriteLine($"{_clientId} Sent: {command}");
             }
         }
     }

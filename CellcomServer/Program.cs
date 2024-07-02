@@ -5,20 +5,48 @@ using CellcomServer;
 
 public class Program
 {
-    // Array of COM port names to iterate over
-    private static readonly string[] portNames = { "COM1", "COM3", "COM5", "COM7", "COM9" };
+    private static SerialPort _serialPort;
+    private static bool sendCellcom = false; // Flag to control the message processing loop
+
     public static async Task Main()
     {
-        // Array to hold tasks for each serial port
-        Task[] tasks = new Task[portNames.Length];
-        int i = 0;
-        for (i = 0; i < portNames.Length; i++)
+        _serialPort = new SerialPort("COM1", 9600);
+         _serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+        _serialPort.Open();
+
+        Console.ReadLine();
+    }
+
+    private static void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+    {
+        SerialPort sp = (SerialPort)sender;
+        string inData = sp.ReadExisting();
+        Task.Run(() => ProcessMessage(inData));
+    }
+
+    private static async Task ProcessMessage(string message)
+    {
+        if (message.Equals("JOIN"))
         {
-            int index = i;
-            // Create a new ServerPort instance for each COM port
-            tasks[i] = Task.Run(() => new ServerPort(portNames[index]));
+            for (int i = 1; i <= 10; i++)
+            {
+                Console.Write($"{i}");
+            }
+            _serialPort.Write("DONE");
         }
-        // Wait for all tasks to complete
-        await Task.WhenAll(tasks);
+        else if (message.Equals("NEW"))
+        {
+            sendCellcom = true;
+            while (sendCellcom)
+            {
+                _serialPort.Write("CELLCOM");
+                await Task.Delay(1000);
+            }
+        }
+        else if (message.Equals("STOP"))
+        {
+            sendCellcom = false;
+            _serialPort.Write("BYE");
+        }
     }
 }
