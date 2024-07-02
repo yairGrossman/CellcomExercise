@@ -17,11 +17,14 @@ namespace CellcomClient
             serialPort.Open();  // Open the serial port for communication
 
             Client[] clients = new Client[clientNum];
+            Task[] tasks = new Task[clientNum];
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i] = new Client(serialPort, "Client " + i);
-                await clients[i].SendCommands();
+                int index = i;
+                tasks[i] = Task.Run(async () => await clients[index].SendCommands());
             }
+            await Task.WhenAll(tasks);
             Console.ReadLine();
         }
 

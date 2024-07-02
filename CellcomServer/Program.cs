@@ -9,7 +9,8 @@ namespace CellcomServer
         private static SerialPort serialPort;
         private static bool sendCellcom = false; // Flag to control the message processing loop
         private const string portName = "COM1";
-        public static async Task Main()
+        private static readonly object taskLock = new object();
+        public static void Main()
         {
             serialPort = new SerialPort(portName, 9600);// Initialize serial port with specified name and baud rate
             serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);// Attach event handler for data received
@@ -30,7 +31,7 @@ namespace CellcomServer
         {
             string[] messages = message.Split(',');
             string msg = messages[0];
-            string clientID= messages[1];
+            string clientID = messages[1];
             if (msg.Contains("JOIN"))
             {
                 for (int i = 1; i <= 10; i++)

@@ -11,6 +11,8 @@ namespace CellcomClient
     {
         private SerialPort serialPort;
         private string clientID;
+        private static readonly object taskLock = new object();
+
         public Client(SerialPort serialPort, string clientID) 
         { 
             this.serialPort = serialPort;
@@ -19,11 +21,13 @@ namespace CellcomClient
 
         public async Task SendCommands()
         {
-            await SendCommand("JOIN"); // Send the user command
-            await Task.Delay(1000); // Delay for 1 second
-            await SendCommand("NEW"); // Send the user command
-            await Task.Delay(5000); // Delay for 5 second
-            await SendCommand("STOP"); // Send the user command
+           await SendCommand("JOIN"); // Send the user command
+           await Task.Delay(1000); // Delay for 1 second
+           await SendCommand("NEW"); // Send the user command
+           await Task.Delay(3000); // Delay for 1 second
+           await SendCommand("STOP"); // Send the user command
+         
+            
         }
 
         // Method for sending a command to the server serial port
